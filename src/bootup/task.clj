@@ -2,29 +2,34 @@
   (:require [tailrecursion.boot.core :as boot]
             [tailrecursion.boot.task :as task]
             [ancient-clj.core        :as ancient]
-            [ancient-clj.verbose     :as verbose]
-            [rewrite-clj.parser      :as parser]
-            [rewrite-clj.printer     :as printer]
             [rewrite-clj.zip         :as z]
             [clojure.java.io         :as io]))
 
-(def boot-core-artifacts '[tailrecursion/boot.core tailrecursion/boot.task])
+(defn ->dep [artifact]
+  (->> (ancient/latest-version-string! artifact)
+       (vector artifact)))
 
-(def current-boot (z/of-file (io/file "boot.edn")))
-
-(defn find-artifact-loc [artifact]
-  (-> current-boot (z/find-value z/next artifact) z/up))
-
-(defn get-latest-version-string [artifact]
-  (ancient/latest-version-string! artifact))
-
-(defn get-current-version-str [artifact]
-  (-> (find-artifact-loc artifact) z/sexpr))
-
-(defn get-latest-artifact-vectors []
-  (mapv #(vector % (ancient/latest-version-string! %)) boot-core-artifacts))
+(defn update-boot-deps []
+  (let [core-artifact 'tailrecursion/boot.core
+        task-artifact 'tailrecursion/boot.task
+        latest-core (->dep core-artifact)
+        latest-task (->dep task-artifact)]
+    (->> (-> (z/of-file "boot.edn")
+             (z/find-value z/next core-artifact) z/up (z/replace latest-core)
+             (z/find-value z/next task-artifact) z/up (z/replace latest-task)
+             (z/->root-string))
+         (spit (io/file "boot.edn")))))
 
 (boot/deftask upgrade-boot
   "Upgrades core boot dependencies to the latest version"
   [boot]
-  (task/pass-thru-wrap #(println get-latest-artifact-vectors)))
+  (task/pass-thru-wrap #(update-boot-deps)))
+
+(comment
+  (let [boot (boot/init! (base/base-env))]
+    ((boot/create-app! boot
+                       {:require-tasks '#{[tailrecursion.boot.core.task :refer :all]}}
+                       {}
+                       {:main [:do [:help]]})
+     (boot/make-event boot)))
+)

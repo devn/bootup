@@ -1,8 +1,8 @@
-{:project       bootup
+{:project       devn/bootup
  :version       "0.1.0-SNAPSHOT"
  :dependencies  [[org.clojure/clojure       "1.5.1"]
-                 [tailrecursion/boot.core   "1.2.0"]
-                 [tailrecursion/boot.task   "1.0.2"]
+                 [tailrecursion/boot.core "1.2.3"]
+                 [tailrecursion/boot.task "1.0.2"]
                  [com.cemerick/pomegranate  "0.2.0"]
                  [ancient-clj               "0.1.6"]
                  [rewrite-clj               "0.3.5"]
